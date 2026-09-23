@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电商智能Agent工作台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .glass {
+                background: rgba(255,255,255,0.72);
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
+                border: 1px solid rgba(255,255,255,0.8);
+                box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+            }
+            .msg-enter {
+                animation: msgEnter 0.35s ease-out forwards;
+                opacity:0;
+                transform: translateY(8px);
+            }
+            @keyframes msgEnter {
+                to { opacity:1; transform: translateY(0); }
+            }
+            .scrollbar-hide::-webkit-scrollbar { display: none; }
+            .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-4xl glass rounded-3xl overflow-hidden flex flex-col h-[84vh]">
+        <header class="px-8 py-6 border-b border-slate-100 flex items-center">
+            <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mr-4">
+                <i class="fa fa-robot text-primary text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-semibold text-slate-800">电商智能Agent工作台</h1>
+                <p class="text-sm text-slate-500 mt-1">库存管理 · 商品咨询 · 销售数据分析</p>
+            </div>
+            <span class="ml-auto px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-xs font-medium">在线</span>
+        </header>
+
+        <div id="chatBox" class="flex-1 p-8 overflow-y-auto scrollbar-hide space-y-6">
+            <div class="flex justify-start msg-enter">
+                <div class="w-8 h-8 rounded-lg bg-primary/10 flex-shrink-0 flex items-center justify-center mr-3 mt-1">
+                    <i class="fa fa-robot text-primary text-sm"></i>
+                </div>
+                <div class="glass rounded-2xl rounded-tl-none px-5 py-4 max-w-[78%]">
+                    <p class="text-slate-700 leading-relaxed">
+                        你好，我是电商智能Agent。<br><br>
+                        <span class="inline-block px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-sm mr-2">👤客户</span>查询商品库存、价格、质保、活动信息<br>
+                        <span class="inline-block px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-sm">🏪商家Admin</span>修改库存、查看热销排行、销售总额报表
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div id="imgPreviewBox" class="px-8 pb-4 hidden">
+            <div class="glass rounded-xl p-4 flex items-center gap-4">
+                <img id="previewImg" class="h-24 rounded-lg object-cover shadow-sm">
+                <div class="flex-1">
+                    <div class="text-sm font-medium text-slate-700">已上传图片</div>
+                    <div id="imgName" class="text-xs text-slate-500 mt-1"></div>
+                </div>
+                <button onclick="clearImage()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 transition flex items-center justify-center">
+                    <i class="fa fa-times text-slate-500"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="px-8 pb-8 space-y-4">
+            <div class="flex items-center gap-3">
+                <select id="roleSelect" class="px-4 py-2.5 glass rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 text-slate-700">
+                    <option value="customer">👤 客户 customer</option>
+                    <option value="admin">🏪 商家 admin</option>
+                </select>
+                <label class="px-4 py-2.5 glass rounded-xl cursor-pointer hover:bg-white/80 transition text-slate-700 text-sm">
+                    <i class="fa fa-upload mr-2"></i>上传商品图片
+                    <input type="file" id="imgInput" accept="image/*" class="hidden">
+                </label>
+            </div>
+            <div class="flex gap-3">
+                <input type="text" id="msgInput" placeholder="输入问题，例如：帮我查询销售报表，哪款耳机销量最高"
+                    class="flex-1 px-5 py-3 glass rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 text-slate-700 placeholder:text-slate-400">
+                <button onclick="sendMessage()" class="px-7 py-3 bg-primary hover:bg-primary/90 text-white rounded-xl transition shadow-lg shadow-primary/20">
+                    发送
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById("chatBox");
+        const msgInput = document.getElementById("msgInput");
+        const roleSelect = document.getElementById("roleSelect");
+        const imgInput = document.getElementById("imgInput");
+        const imgPreviewBox = document.getElementById("imgPreviewBox");
+        const previewImg = document.getElementById("previewImg");
+        const imgName = document.getElementById("imgName");
+
+        let selectedFile = null;
+
+        imgInput.onchange = function(){
+            if(this.files.length>0){
+                selectedFile = this.files[0];
+                previewImg.src = URL.createObjectURL(selectedFile);
+                imgName.innerText = selectedFile.name;
+                imgPreviewBox.classList.remove("hidden");
+            }
+        }
+        function clearImage(){
+            selectedFile = null;
+            imgInput.value = "";
+            imgPreviewBox.classList.add("hidden");
+        }
+
+        function addMsg(text, isUser=false){
+            if(!text) text = "服务返回内容为空";
+            const safeText = String(text).replaceAll("\n","<br/>");
+            const div = document.createElement("div");
+            div.className = "flex " + (isUser ? "justify-end" : "justify-start") + " msg-enter";
+            if(isUser){
+                div.innerHTML = `
+                    <div class="glass rounded-2xl rounded-tr-none px-5 py-4 max-w-[78%]">
+                        <p class="text-slate-700 leading-relaxed">${safeText}</p>
+                    </div>
+                    <div class="w-8 h-8 rounded-lg bg-slate-100 flex-shrink-0 flex items-center justify-center ml-3 mt-1">
+                        <i class="fa fa-user text-slate-500 text-sm"></i>
+                    </div>`;
+            }else{
+                div.innerHTML = `
+                    <div class="w-8 h-8 rounded-lg bg-primary/10 flex-shrink-0 flex items-center justify-center mr-3 mt-1">
+                        <i class="fa fa-robot text-primary text-sm"></i>
+                    </div>
+                    <div class="glass rounded-2xl rounded-tl-none px-5 py-4 max-w-[78%]">
+                        <p class="text-slate-700 leading-relaxed">${safeText}</p>
+                    </div>`;
+            }
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function addLoadingSkeleton(){
+            const div = document.createElement("div");
+            div.id = "loadingSkeleton";
+            div.className = "flex justify-start msg-enter";
+            div.innerHTML = `
+                <div class="w-8 h-8 rounded-lg bg-primary/10 flex-shrink-0 flex items-center justify-center mr-3 mt-1">
+                    <i class="fa fa-robot text-primary text-sm"></i>
+                </div>
+                <div class="glass rounded-2xl rounded-tl-none px-5 py-4 max-w-[78%] space-y-2">
+                    <div class="h-3 bg-slate-200 rounded w-4/5"></div>
+                    <div class="h-3 bg-slate-200 rounded w-2/3"></div>
+                </div>`;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+        function removeSkeleton(){
+            const el = document.getElementById("loadingSkeleton");
+            if(el) el.remove();
+        }
+
+        async function sendMessage(){
+            const text = msgInput.value.trim();
+            const role = roleSelect.value;
+            if(!text && !selectedFile) return;
+
+            if(text) addMsg(text, true);
+            msgInput.value = "";
+
+            // 走图片上传接口
+            if(selectedFile){
+                addLoadingSkeleton();
+                const fd = new FormData();
+                fd.append("file", selectedFile);
+                try{
+                    const res = await fetch("/api/upload_img", {method:"POST", body:fd});
+                    const data = await res.json();
+                    removeSkeleton();
+                    if(data.code === 0){
+                        addMsg(`识别商品：${data.goods_name}`, true);
+                        addMsg(data.agent_reply || "识别成功");
+                    }else{
+                        addMsg("图片识别失败：" + (data.msg || "未知错误"));
+                    }
+                }catch(err){
+                    removeSkeleton();
+                    addMsg("请求出错：" + err);
+                }
+                clearImage();
+                return;
+            }
+
+            // 普通文字对话
+            addLoadingSkeleton();
+            const fd = new FormData();
+            fd.append("user_msg", text);
+            fd.append("role", role);
+            try{
+                const res = await fetch("/api/chat", {method:"POST", body:fd});
+                const data = await res.json();
+                removeSkeleton();
+                if(data.code === 0){
+                    addMsg(data.data || "服务返回无内容");
+                }else{
+                    addMsg("出错：" + (data.msg || "未知错误"));
+                }
+            }catch(err){
+                removeSkeleton();
+                addMsg("请求出错：" + err);
+            }
+        }
+
+        msgInput.onkeydown = function(e){
+            if(e.key === "Enter") sendMessage();
+        };
+    </script>
+</body>
+</html>

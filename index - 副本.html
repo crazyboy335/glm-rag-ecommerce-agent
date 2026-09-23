@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>电商Agent客服</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui}
+        body{background:#f3f4f6;padding:20px;max-width:900px;margin:0 auto}
+        h1{text-align:center;color:#222;margin-bottom:20px;font-size:22px}
+        #chat-box{height:500px;background:#fff;border-radius:10px;padding:16px;overflow-y:auto;margin-bottom:16px;border:1px solid #ddd}
+        .msg{margin:8px 0;line-height:1.6}
+        .user{text-align:right}
+        .user span{background:#2563eb;color:#fff;padding:8px 12px;border-radius:8px;display:inline-block;max-width:75%}
+        .bot span{background:#e5e7eb;color:#111;padding:8px 12px;border-radius:8px;display:inline-block;max-width:75%}
+        .input-area{display:flex;gap:10px;align-items:center}
+        #input-text{flex:1;padding:12px;border:1px solid #ccc;border-radius:8px;font-size:16px}
+        #send-btn{padding:12px 24px;background:#2563eb;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:16px}
+        #role-select{padding:12px;border-radius:8px;border:1px solid #ccc}
+    </style>
+</head>
+<body>
+    <h1>电商客服Agent</h1>
+    <div id="chat-box"></div>
+    <div class="input-area">
+        <select id="role-select">
+            <option value="customer">客户 customer</option>
+            <option value="operator">商家 operator</option>
+        </select>
+        <input id="input-text" placeholder="输入你的问题，例如：蓝牙耳机库存多少？">
+        <button id="send-btn">发送</button>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById("chat-box");
+        const inputText = document.getElementById("input-text");
+        const sendBtn = document.getElementById("send-btn");
+        const roleSelect = document.getElementById("role-select");
+
+        function addMsg(text, isUser){
+            const div = document.createElement("div");
+            div.className = isUser ? "msg user" : "msg bot";
+            div.innerHTML = `<span>${text}</span>`;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function sendMessage(){
+            const text = inputText.value.trim();
+            const role = roleSelect.value;
+            if(!text) return;
+            addMsg(text, true);
+            inputText.value = "";
+            const res = await fetch("/api/chat", {
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({user_input:text, user_role:role})
+            })
+            const data = await res.json();
+            addMsg(data.reply, false);
+        }
+        sendBtn.onclick = sendMessage;
+        inputText.onkeydown = e=>{if(e.key==="Enter") sendMessage()}
+    </script>
+</body>
+</html>
