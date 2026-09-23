@@ -1,6 +1,0 @@
-RAG全称检索增强生成，全称Retrieval-Augmented Generation。
-RAG可以把外部文档内容交给大模型，让大模型基于真实资料回答，减少幻觉。
-AI Agent是具备规划、工具调用能力的智能体，可以自主完成多步骤任务。
-LangChain是用来快速搭建大模型应用、Agent、RAG项目的开发框架。
-Chroma是轻量级本地向量数据库，用来存储文本向量，做相似度检索。
-Agent可以自主选择工具
